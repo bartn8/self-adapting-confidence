@@ -68,16 +68,17 @@ def pad(img, h, w):
     else:
         return np.pad(img, ((0,0),(0,hpad),(0,wpad),(0,0)), 'constant'),hpad,wpad
 
+def mypad(img):
+    hpad = (16 - img.shape[1]%16)%16
+    wpad = (16 - img.shape[2]%16)%16
+    if hpad+wpad==0:
+        return img,0,0
+    else:
+        return np.pad(img, ((0,0),(0,hpad),(0,wpad),(0,0)), 'constant'),hpad,wpad
+
 
 def depad(img,hpad,wpad):
     return img[:,0:img.shape[1]-hpad,0:img.shape[2]-wpad,:]
-
-
-
-
-
-
-
 
 def bilinear_sampler(imgs, coords):
     def _repeat(x, n_repeats):
@@ -195,9 +196,9 @@ def SSIM(x, y):
     SSIM_n = (2 * mu_x * mu_y + C1) * (2 * sigma_xy + C2)
     SSIM_d = (mu_x ** 2 + mu_y ** 2 + C1) * (sigma_x + sigma_y + C2)
 
-    SSIM = SSIM_n / SSIM_d
+    SSIM_value = SSIM_n / SSIM_d
 
-    return tf.clip_by_value((1 - SSIM) / 2, 0, 1)
+    return tf.clip_by_value((1 - SSIM_value) / 2, 0, 1)
 
 def kitti_colormap(disparity, maxval=-1):
         """

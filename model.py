@@ -35,12 +35,17 @@ class OTB(object):
         self.left_dir = left_dir
         self.right_dir = right_dir
         self.disp_dir = disp_dir
+        
         self.dataloader = Dataloader(dataset=self.dataset, left_dir=self.left_dir, right_dir=self.right_dir, disp_dir=self.disp_dir)
+        
         self.placeholders = {'left':tf.compat.v1.placeholder(tf.float32, [1, self.image_height, self.image_width, 3], name='left'),
                              'right':tf.compat.v1.placeholder(tf.float32, [1, self.image_height, self.image_width, 3], name='right'),
                              'disp':tf.compat.v1.placeholder(tf.float32, [1, self.image_height, self.image_width, 1], name='disparity')}
+        
         self.learning_rate = tf.compat.v1.placeholder(tf.float32, shape=[])        
+        
         self.ConfNet_v2() 
+        
         if self.mode == 'otb-online': 
             self.build_losses()
 
@@ -58,11 +63,12 @@ class OTB(object):
                     self.conv1_disparity = ops.conv2d(disp, [kernel_size, kernel_size, 1, filters], 1, True, padding='SAME')
             
             model_input = self.conv1_disparity
-            self.net1, self.scale1 = ops.encoding_unit('1', model_input, filters)
 
+            self.net1, self.scale1 = ops.encoding_unit('1', model_input, filters)
             self.net2, self.scale2 = ops.encoding_unit('2', self.net1,   filters * 4)
             self.net3, self.scale3 = ops.encoding_unit('3', self.net2,   filters * 8)
             self.net4, self.scale4 = ops.encoding_unit('4', self.net3,   filters * 16)
+            
             self.net5 = ops.decoding_unit('4', self.net4, num_outputs=filters * 8, forwards=self.scale4)
             self.net6 = ops.decoding_unit('3', self.net5, num_outputs=filters * 4, forwards=self.scale3)
             self.net7 = ops.decoding_unit('2', self.net6, num_outputs=filters * 2,  forwards=self.scale2)
