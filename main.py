@@ -33,7 +33,7 @@ def main(_):
     if args.cpu:
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
-    gpu_opt = tf.GPUOptions(per_process_gpu_memory_fraction=args.mem)
+    gpu_opt = tf.compat.v1.GPUOptions(per_process_gpu_memory_fraction=args.mem)
 
     assert len(args.p) != 0 or args.mode != 'otb-online', "--p cannot be empty!"
     assert len(args.q) != 0 or args.mode != 'otb-online', "--q cannot be empty!" 
@@ -41,7 +41,7 @@ def main(_):
     assert args.image_height % 16 == 0, "Image height must be multiple of 16"
     assert args.image_width % 16 == 0, "Image width must be multiple of 16"
 
-    with tf.Session(config=tf.ConfigProto(gpu_options=gpu_opt)) as sess:
+    with tf.compat.v1.Session(config=tf.compat.v1.ConfigProto(gpu_options=gpu_opt)) as sess:
         model = OTB(sess,
                     mode=args.mode, dataset=args.dataset,
                     left_dir=args.left_dir, right_dir=args.right_dir, disp_dir=args.disp_dir,
@@ -54,4 +54,4 @@ def main(_):
 
 
 if __name__ == '__main__':
-    tf.app.run()
+    tf.compat.v1.app.run()

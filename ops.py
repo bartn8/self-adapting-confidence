@@ -3,9 +3,9 @@ import numpy as np
 
 
 def conv2d(x, kernel_shape, strides=1, relu=True, padding='SAME'):
-    W = tf.get_variable("weights", kernel_shape, initializer=tf.contrib.layers.xavier_initializer_conv2d(uniform=False))
-    tf.add_to_collection(tf.GraphKeys.WEIGHTS, W)
-    b = tf.get_variable("biases", kernel_shape[3], initializer=tf.contrib.layers.xavier_initializer_conv2d(uniform=False))
+    W = tf.compat.v1.get_variable("weights", kernel_shape, initializer=tf.contrib.layers.xavier_initializer_conv2d(uniform=False))
+    tf.compat.v1.add_to_collection(tf.compat.v1.GraphKeys.WEIGHTS, W)
+    b = tf.compat.v1.get_variable("biases", kernel_shape[3], initializer=tf.contrib.layers.xavier_initializer_conv2d(uniform=False))
     with tf.name_scope("conv"):
         x = tf.nn.conv2d(x, W, strides=[1, strides, strides, 1], padding=padding)
         x = tf.nn.bias_add(x, b)
@@ -14,7 +14,7 @@ def conv2d(x, kernel_shape, strides=1, relu=True, padding='SAME'):
     return x
 
 def encoding_unit(name, inputs, num_outputs):
-    with tf.variable_scope('encoding' + str(name)):
+    with tf.compat.v1.variable_scope('encoding' + str(name)):
         conv = tf.contrib.layers.conv2d(
                     inputs=inputs,
                     num_outputs=num_outputs,
@@ -32,10 +32,10 @@ def upsample_nn(x, ratio):
     s = tf.shape(x)
     h = s[1]
     w = s[2]
-    return tf.image.resize_nearest_neighbor(x, [h * ratio, w * ratio])
+    return tf.compat.v1.image.resize_nearest_neighbor(x, [h * ratio, w * ratio])
 
 def decoding_unit(number, inputs, num_outputs, forwards=None):
-    with tf.variable_scope('decoding' + number):
+    with tf.compat.v1.variable_scope('decoding' + number):
         conv_transpose = tf.nn.relu(tf.contrib.layers.conv2d(upsample_nn(inputs, 2), num_outputs=num_outputs, kernel_size=3, activation_fn=None))
 
         if forwards is not None:
@@ -185,12 +185,12 @@ def SSIM(x, y):
     C1 = 0.01 ** 2
     C2 = 0.03 ** 2
 
-    mu_x = tf.nn.avg_pool(x, [1, 3, 3, 1], [1, 1, 1, 1], 'SAME')
-    mu_y = tf.nn.avg_pool(y, [1, 3, 3, 1], [1, 1, 1, 1], 'SAME')
+    mu_x = tf.nn.avg_pool2d(x, [1, 3, 3, 1], [1, 1, 1, 1], 'SAME')
+    mu_y = tf.nn.avg_pool2d(y, [1, 3, 3, 1], [1, 1, 1, 1], 'SAME')
 
-    sigma_x = tf.nn.avg_pool(x ** 2, [1, 3, 3, 1], [1, 1, 1, 1], 'SAME') - mu_x ** 2
-    sigma_y = tf.nn.avg_pool(y ** 2, [1, 3, 3, 1], [1, 1, 1, 1], 'SAME') - mu_y ** 2
-    sigma_xy = tf.nn.avg_pool(x * y , [1, 3, 3, 1], [1, 1, 1, 1], 'SAME') - mu_x * mu_y
+    sigma_x = tf.nn.avg_pool2d(x ** 2, [1, 3, 3, 1], [1, 1, 1, 1], 'SAME') - mu_x ** 2
+    sigma_y = tf.nn.avg_pool2d(y ** 2, [1, 3, 3, 1], [1, 1, 1, 1], 'SAME') - mu_y ** 2
+    sigma_xy = tf.nn.avg_pool2d(x * y , [1, 3, 3, 1], [1, 1, 1, 1], 'SAME') - mu_x * mu_y
 
     SSIM_n = (2 * mu_x * mu_y + C1) * (2 * sigma_xy + C2)
     SSIM_d = (mu_x ** 2 + mu_y ** 2 + C1) * (sigma_x + sigma_y + C2)

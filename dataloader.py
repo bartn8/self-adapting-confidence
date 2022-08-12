@@ -24,7 +24,7 @@ class Dataloader(object):
         self.filename = split_line[0]
 
     def read_image(self, image_path, shape=None, dtype=tf.uint8, norm=False):
-        image_raw = tf.read_file(image_path)
+        image_raw = tf.io.read_file(image_path)
         if dtype == tf.uint8:
             image = tf.image.decode_image(image_raw)
         else:

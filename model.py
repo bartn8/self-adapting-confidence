@@ -36,10 +36,10 @@ class OTB(object):
         self.right_dir = right_dir
         self.disp_dir = disp_dir
         self.dataloader = Dataloader(dataset=self.dataset, left_dir=self.left_dir, right_dir=self.right_dir, disp_dir=self.disp_dir)
-        self.placeholders = {'left':tf.placeholder(tf.float32, [1, self.image_height, self.image_width, 3], name='left'),
-                             'right':tf.placeholder(tf.float32, [1, self.image_height, self.image_width, 3], name='right'),
-                             'disp':tf.placeholder(tf.float32, [1, self.image_height, self.image_width, 1], name='disparity')}
-        self.learning_rate = tf.placeholder(tf.float32, shape=[])        
+        self.placeholders = {'left':tf.compat.v1.placeholder(tf.float32, [1, self.image_height, self.image_width, 3], name='left'),
+                             'right':tf.compat.v1.placeholder(tf.float32, [1, self.image_height, self.image_width, 3], name='right'),
+                             'disp':tf.compat.v1.placeholder(tf.float32, [1, self.image_height, self.image_width, 1], name='disparity')}
+        self.learning_rate = tf.compat.v1.placeholder(tf.float32, shape=[])        
         self.ConfNet_v2() 
         if self.mode == 'otb-online': 
             self.build_losses()
@@ -51,10 +51,10 @@ class OTB(object):
         filters = 32
         disp = self.placeholders['disp']
 
-        with tf.variable_scope('ConfNet'):
+        with tf.compat.v1.variable_scope('ConfNet'):
                                     
-            with tf.variable_scope('disparity'):  
-                with tf.variable_scope("conv1"):
+            with tf.compat.v1.variable_scope('disparity'):  
+                with tf.compat.v1.variable_scope("conv1"):
                     self.conv1_disparity = ops.conv2d(disp, [kernel_size, kernel_size, 1, filters], 1, True, padding='SAME')
             
             model_input = self.conv1_disparity
@@ -72,7 +72,7 @@ class OTB(object):
 
 
     def build_losses(self):
-        with tf.variable_scope('loss'):
+        with tf.compat.v1.variable_scope('loss'):
 
             # prepare validity mask
             self.valid = tf.ones_like(self.placeholders['disp'])
@@ -110,7 +110,7 @@ class OTB(object):
             # quick implementation for MBCE
             self.proxysignal = self.P * (1 - self.Q)
             self.valid = self.valid * (self.P + self.Q) 
-            self.loss = tf.losses.sigmoid_cross_entropy(self.proxysignal, self.prediction, self.valid)
+            self.loss = tf.compat.v1.losses.sigmoid_cross_entropy(self.proxysignal, self.prediction, self.valid)
 
     def run(self, args):
         print(" [*] Running....")
@@ -118,8 +118,8 @@ class OTB(object):
         if not os.path.exists(args.output_path):
             os.makedirs(args.output_path)
 
-        self.sess.run(tf.global_variables_initializer())
-        self.sess.run(tf.local_variables_initializer())
+        self.sess.run(tf.compat.v1.global_variables_initializer())
+        self.sess.run(tf.compat.v1.local_variables_initializer())
 
         disp_batch = self.dataloader.disp
         left_batch = self.dataloader.left
@@ -143,7 +143,7 @@ class OTB(object):
         elif 'otb' in self.mode:
 
             print(' [*] OTB inference')
-            self.saver = tf.train.Saver()
+            self.saver = tf.compat.v1.train.Saver()
             if args.checkpoint_path:
                 self.saver.restore(self.sess, args.checkpoint_path)
                 print(" [*] Load model: SUCCESS")
@@ -156,7 +156,7 @@ class OTB(object):
 
             if self.mode == 'otb-online':
                 print(' [*] Online Adaptation')
-                self.optimizer = tf.train.GradientDescentOptimizer(self.learning_rate).minimize(self.loss, var_list=tf.global_variables())
+                self.optimizer = tf.compat.v1.train.GradientDescentOptimizer(self.learning_rate).minimize(self.loss, var_list=tf.compat.v1.global_variables())
         else:
             print(" [*] Unsupported testing mode!")
             raise ValueError('args.mode is not supported')
@@ -180,6 +180,7 @@ class OTB(object):
 
             confidence = ops.depad(confidence, hpad, wpad)
 
+            filename = filename.decode('UTF-8')
             outdir = args.output_path + '/' + filename
             if not os.path.exists(outdir):
                 os.makedirs(outdir)
