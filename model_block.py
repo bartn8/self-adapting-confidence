@@ -1,3 +1,4 @@
+import os
 import tensorflow as tf
 import numpy as np
 #import ops
@@ -12,12 +13,15 @@ ops = importlib.import_module("self-adapting-confidence.ops")
 
 class OTBBlock(object):
 
-    def __init__(self, image_height, image_width, initial_learning_rate=0.0001, p=['t','a','u'], q=['t'], verbose=False):                        
+    def __init__(self, output_path, image_height, image_width, save_epoch_freq=10, initial_learning_rate=0.0001, p=['t','a','u'], q=['t'], verbose=False):                        
         #session_conf = tf.ConfigProto(intra_op_parallelism_threads=1, inter_op_parallelism_threads=1)
         #self.sess = tf.compat.v1.Session(config=session_conf)
         self.sess = tf.compat.v1.Session()
         self.disposed = False
         #self.mode = 'otb-online'
+        self.output_path = output_path
+        self.steps = 0
+        self.save_epoch_freq = save_epoch_freq
 
         hpad = (16 - image_height%16)%16
         wpad = (16 - image_width%16)%16
@@ -141,6 +145,7 @@ class OTBBlock(object):
         self.saver = tf.compat.v1.train.Saver()
         if checkpoint_path:
             self.saver.restore(self.sess, checkpoint_path)
+            self.steps = 0
             self.log(" [*] Load model: SUCCESS")
         else:
             self.log(" [*] Load failed...neglected")
@@ -166,7 +171,7 @@ class OTBBlock(object):
         val_right, _, _ = ops.mypad(right)
 
         start = time.time()
-        _, confidence = self.sess.run([self.optimizer, self.net_output], feed_dict={self.placeholders['disp']: val_disp, self.placeholders['left']: val_left, self.placeholders['right']: val_right, self.learning_rate: self.initial_learning_rate})
+        _, loss, confidence = self.sess.run([self.optimizer, self.loss, self.net_output], feed_dict={self.placeholders['disp']: val_disp, self.placeholders['left']: val_left, self.placeholders['right']: val_right, self.learning_rate: self.initial_learning_rate})
         confidence = ops.depad(confidence, hpad, wpad)
         current = time.time()
 
@@ -174,7 +179,13 @@ class OTBBlock(object):
         c = (c - np.min(c)) / (np.max(c) - np.min(c))
         myConfidence = (c).astype('float32')
 
+        if self.steps % self.save_epoch_freq == 0:
+            self.saver.save(self.sess, os.path.join(self.output_path, "model"), global_step=self.steps)
+
+        self.steps += 1
+
         self.log(" [*] Inference time:" + str(current - start) + "s")
+        self.log(f" [*] Loss {loss}")
         
         #coord.request_stop()
         #coord.join(threads)
