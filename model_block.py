@@ -9,7 +9,7 @@ import time
 # import sys
 
 import importlib
-ops = importlib.import_module("self-adapting-confidence.ops")
+ops = importlib.import_module("thirdparty.self-adapting-confidence.ops")
 
 class OTBBlock(object):
 
